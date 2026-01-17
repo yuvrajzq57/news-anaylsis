@@ -17,7 +17,7 @@ SAMPLE_ARTICLE = {
     'content': 'India has announced major economic reforms...',
     'url': 'https://example.com/article',
     'publishedAt': '2024-01-15T10:00:00Z',
-    'source': 'Test News'
+    'source': {'name': 'Test News'}
 }
 
 SAMPLE_ANALYSIS = {
