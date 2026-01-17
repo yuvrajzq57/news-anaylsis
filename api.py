@@ -22,11 +22,7 @@ load_dotenv()
 app = FastAPI()
 
 # Configure CORS
-origins = [
-    "http://localhost:3000",  # Frontend URL
-    "http://127.0.0.1:3000",
-    "https://news-article-opal.vercel.app/"
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,9 +49,7 @@ async def analyze_news(request: Request, topic: str = "Indian Politics", count: 
                 logger.info("Client disconnected during analysis")
                 break
                 
-            # Filter out 'full_result' as frontend might not need it, or keep it if it's lightweight.
-            # actually frontend expects 'result', 'log', 'error', 'close'. 
-            # 'full_result' is large and only for CLI saving really.
+            # Filter out 'full_result' as frontend might not need it
             if event['event'] == 'full_result':
                 continue
                 
