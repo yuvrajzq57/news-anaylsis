@@ -6,6 +6,7 @@ Orchestrates fetching, analysis, validation, and reporting.
 import os
 import json
 import time
+import asyncio
 from datetime import datetime
 from news_fetcher import NewsFetcher
 from llm_analyzer import LLMAnalyzer
@@ -89,7 +90,7 @@ def generate_markdown_report(validated_results):
     
     return report_content
 
-def main():
+async def main():
     """Main execution flow."""
     print("=" * 60)
     print("NEWS ANALYSIS PIPELINE - DUAL LLM VALIDATION")
@@ -105,7 +106,9 @@ def main():
     # Step 2: Fetch news articles
     print("\n[Step 2/5] Fetching news articles...")
     fetcher = NewsFetcher()
-    articles = fetcher.fetch_india_politics_news(num_articles=12)
+    # Note: fetcher is still sync, running in thread to be safe if main loop needed it,
+    # but for simple script direct call is fine. Using to_thread for good practice.
+    articles = await asyncio.to_thread(fetcher.fetch_news, topic="Indian Politics", num_articles=12)
     
     if not articles:
         print("✗ No articles fetched. Exiting.")
@@ -114,31 +117,32 @@ def main():
     save_json(articles, 'raw_articles.json')
     print(f"✓ Fetched {len(articles)} articles")
     
-    # Step 3: Analyze with LLM#1 (Groq GPT OSS 120B)
-    print("\n[Step 3/5] Analyzing with LLM#1 (Groq GPT OSS 120B)...")
+    # Step 3: Analyze with LLM#1 (Groq Llama 3.3 70B)
+    print("\n[Step 3/5] Analyzing with LLM#1 (Groq Llama 3.3 70B)...")
     analyzer = LLMAnalyzer()
     analysis_results = []
     
     for idx, article in enumerate(articles, 1):
         print(f"  Analyzing article {idx}/{len(articles)}...", end=" ")
-        analysis = analyzer.analyze_article(article)
+        analysis = await analyzer.analyze_article(article)
         analysis_results.append({
             'article': article,
             'analysis': analysis
         })
         print("✓")
-        time.sleep(3)  # Delay to avoid rate limits
+        # No sleep needed with async usually, but decent to be nice to API
+        await asyncio.sleep(1)
     
     save_json(analysis_results, 'analysis_results.json')
     
-    # Step 4: Validate with LLM#2 (Groq GPT OSS 20B)
-    print("\n[Step 4/5] Validating with LLM#2 (Groq GPT OSS 20B)...")
+    # Step 4: Validate with LLM#2 (Groq Llama 3.1 8B)
+    print("\n[Step 4/5] Validating with LLM#2 (Groq Llama 3.1 8B)...")
     validator = LLMValidator()
     validated_results = []
     
     for idx, result in enumerate(analysis_results, 1):
         print(f"  Validating article {idx}/{len(analysis_results)}...", end=" ")
-        validation = validator.validate_analysis(
+        validation = await validator.validate_analysis(
             result['article'],
             result['analysis']
         )
@@ -148,7 +152,7 @@ def main():
             'validation': validation
         })
         print("✓")
-        time.sleep(3)  # Delay to avoid rate limits
+        await asyncio.sleep(1)
     
     save_json(validated_results, 'validated_results.json')
     
@@ -166,4 +170,4 @@ def main():
     print("  - final_report.md")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

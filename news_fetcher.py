@@ -20,22 +20,33 @@ class NewsFetcher:
         self.base_url = "https://newsapi.org/v2/everything"
         self.timeout = 10  # seconds
     
-    def fetch_india_politics_news(self, num_articles=12):
+    def fetch_news(self, topic="Indian Politics", num_articles=12):
         """
-        Fetch recent news articles about Indian politics.
+        Fetch recent news articles based on topic.
         
         Args:
+            topic: Topic to fetch (default: "Indian Politics")
             num_articles: Number of articles to fetch (default: 12)
             
         Returns:
             List of article dictionaries, or empty list on error
         """
-        # Calculate date range (last 7 days)
+        # Calculate date range (last 24 hours for realtime news)
         to_date = datetime.now()
-        from_date = to_date - timedelta(days=7)
+        from_date = to_date - timedelta(days=1)
+        
+        # Topic mapping
+        topic_queries = {
+            "Indian Politics": "India politics OR India government",
+            "Technology": "technology OR tech news OR artificial intelligence",
+            "Business": "business OR economy OR market",
+            "International": "international news OR world news"
+        }
+        
+        query = topic_queries.get(topic, "India politics")
         
         params = {
-            'q': 'India politics OR India government',
+            'q': query,
             'from': from_date.strftime('%Y-%m-%d'),
             'to': to_date.strftime('%Y-%m-%d'),
             'language': 'en',
